@@ -43,3 +43,10 @@ class DownloadTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 fetch_companyfacts(123, "Research contact@example.org", temp,
                                    lambda req, timeout: Response(b'{"cik":123}'))
+
+    def test_reject_fractional_cik(self):
+        with tempfile.TemporaryDirectory() as temp:
+            with self.assertRaises(ValueError):
+                fetch_companyfacts(123, "Research contact@example.org", temp,
+                                   lambda req, timeout: Response(b'{"cik":123.5,"facts":{}}'))
+            self.assertEqual(list(Path(temp).glob("*.json")), [])
