@@ -28,9 +28,16 @@ def fetch_companyfacts(cik, user_agent, cache_dir, opener=urlopen):
         raise ValueError("SEC response CIK mismatch")
     if not isinstance(document.get("facts"), dict):
         raise ValueError("SEC response missing facts")
-    temporary = target.with_suffix(".json.tmp")
-    temporary.write_bytes(payload)
-    temporary.replace(target)
+    from tempfile import NamedTemporaryFile
+    temporary = None
+    try:
+        with NamedTemporaryFile(dir=cache_dir, prefix=target.name + ".", suffix=".tmp", delete=False) as handle:
+            temporary = Path(handle.name)
+            handle.write(payload)
+        temporary.replace(target)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
     return document, target
 
 def main(argv=None):
