@@ -24,7 +24,7 @@ def fetch_companyfacts(cik, user_agent, cache_dir, opener=urlopen):
     if len(payload) > 20_000_000:
         raise ValueError("SEC response exceeds size limit")
     document = json.loads(payload)
-    if not isinstance(document, dict) or int(document.get("cik", -1)) != cik:
+    if not isinstance(document, dict) or type(document.get("cik")) is not int or document["cik"] != cik:
         raise ValueError("SEC response CIK mismatch")
     if not isinstance(document.get("facts"), dict):
         raise ValueError("SEC response missing facts")
