@@ -42,3 +42,8 @@ class SecTests(unittest.TestCase):
         d["facts"]["us-gaap"]["NetCashProvidedByUsedInOperatingActivities"]["units"]["USD"] = [
             fact(100, "2026-02-15", start="2025-10-01")]
         self.assertEqual(summarize(d, "2026-03-01")["annual_fcf"], [])
+
+    def test_mismatched_fiscal_periods_not_combined(self):
+        d = document()
+        d['facts']['us-gaap']['PaymentsToAcquirePropertyPlantAndEquipment']['units']['USD'] = [fact(20, '2026-02-15', start='2025-01-02')]
+        self.assertEqual(summarize(d, '2026-03-01')['annual_fcf'], [])
