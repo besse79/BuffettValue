@@ -50,3 +50,12 @@ class DownloadTests(unittest.TestCase):
                 fetch_companyfacts(123, "Research contact@example.org", temp,
                                    lambda req, timeout: Response(b'{"cik":123.5,"facts":{}}'))
             self.assertEqual(list(Path(temp).glob("*.json")), [])
+
+    def test_failed_replace_cleans_temporary_cache(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as temp:
+            with patch.object(Path, "replace", side_effect=OSError("fixture failure")):
+                with self.assertRaises(OSError):
+                    fetch_companyfacts(123, "Research contact@example.org", temp,
+                                       lambda req, timeout: Response(b'{"cik":123,"facts":{}}'))
+            self.assertEqual(list(Path(temp).iterdir()), [])
