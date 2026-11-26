@@ -35,7 +35,7 @@ def _annual(document, tag, as_of):
             continue
         if row.get("form") not in ("10-K", "10-K/A"):
             continue
-        year = end.year
+        year = (start, end)
         previous = result.get(year)
         if previous is None or (filed, end) > (previous["filed"], previous["end"]):
             result[year] = {"value": float(row["val"]), "filed": filed, "end": end}
@@ -60,8 +60,9 @@ def summarize(document, as_of):
     capex = _annual(document, CAPEX_TAGS[0], as_of)
     years = sorted(set(operating) & set(capex))
     annual = []
-    for year in years:
-        op, cap = operating[year], capex[year]
+    for period in years:
+        op, cap = operating[period], capex[period]
+        year = period[1].year
         annual.append({"year": year, "operating_cash_flow_usd": op["value"],
                        "capex_usd": cap["value"], "free_cash_flow_usd": op["value"] - cap["value"],
                        "operating_filed": op["filed"].isoformat(), "capex_filed": cap["filed"].isoformat()})
