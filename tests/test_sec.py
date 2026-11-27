@@ -47,3 +47,17 @@ class SecTests(unittest.TestCase):
         d = document()
         d['facts']['us-gaap']['PaymentsToAcquirePropertyPlantAndEquipment']['units']['USD'] = [fact(20, '2026-02-15', start='2025-01-02')]
         self.assertEqual(summarize(d, '2026-03-01')['annual_fcf'], [])
+
+    def test_impossible_filing_chronology(self):
+        d = document()
+        d["facts"]["us-gaap"]["NetCashProvidedByUsedInOperatingActivities"]["units"]["USD"] = [fact(100, "2025-12-01")]
+        d["facts"]["dei"]["EntityCommonStockSharesOutstanding"]["units"]["shares"] = [
+            {"val": 10, "filed": "2025-12-01", "end": "2025-12-31"}]
+        r = summarize(d, "2026-03-01")
+        self.assertEqual(r["annual_fcf"], [])
+        self.assertIsNone(r["shares"])
+
+    def test_negative_capex_not_used_to_inflate_fcf(self):
+        d = document()
+        d["facts"]["us-gaap"]["PaymentsToAcquirePropertyPlantAndEquipment"]["units"]["USD"] = [fact(-20, "2026-02-15")]
+        self.assertEqual(summarize(d, "2026-03-01")["annual_fcf"], [])
