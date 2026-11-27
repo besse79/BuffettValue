@@ -16,7 +16,7 @@ def _facts(document, taxonomy, tag, unit, as_of):
             value = row["val"]
             if not isinstance(value, (int, float)) or isinstance(value, bool) or not isfinite(value):
                 continue
-            if filed > as_of or end > as_of:
+            if filed > as_of or end > filed:
                 continue
             valid.append((row, filed, end))
         except (KeyError, TypeError, ValueError):
@@ -34,6 +34,8 @@ def _annual(document, tag, as_of):
         if not 330 <= days <= 380:
             continue
         if row.get("form") not in ("10-K", "10-K/A"):
+            continue
+        if tag in CAPEX_TAGS and row['val'] < 0:
             continue
         year = (start, end)
         previous = result.get(year)
