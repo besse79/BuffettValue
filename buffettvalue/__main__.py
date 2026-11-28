@@ -20,10 +20,26 @@ def evaluate(payload):
 def main(argv=None):
     parser = argparse.ArgumentParser(description="BuffettValue V1 offline DCF research (no PAPER orders)")
     parser.add_argument("--input", required=True, type=Path, help="JSON file containing DCF assumptions")
+    parser.add_argument("--mkd-instrument")
+    parser.add_argument("--currency", choices=["EUR","USD"])
     args = parser.parse_args(argv)
     try:
         payload = json.loads(args.input.read_text(encoding="utf-8"))
-        print(json.dumps(evaluate(payload), indent=2, sort_keys=True, allow_nan=False))
+        if args.mkd_instrument:
+            from datetime import datetime, timezone, timedelta
+            from .mkd_observations import observed_history
+            now = datetime.now(timezone.utc)
+            if not args.currency:
+                raise ValueError("DCF assumptions must use the specified price currency")
+            doc = observed_history(args.mkd_instrument,currency=args.currency,start=now.date()-timedelta(days=4),end=now.date()-timedelta(days=1),as_of=now)
+            if not doc["items"]:
+                raise ValueError("no recent MKD observations")
+            row = doc["items"][-1]
+            payload["price"] = float(row["close"])
+            result = {**evaluate(payload),"price_source":"MKD_OBSERVED","price_date":row["date"],"currency":args.currency}
+        else:
+            result = evaluate(payload)
+        print(json.dumps(result, indent=2, sort_keys=True, allow_nan=False))
     except (OSError, ValueError, TypeError, json.JSONDecodeError, OverflowError, ZeroDivisionError) as exc:
         print(f"DCF_ERROR: {exc}", file=sys.stderr)
         return 2
