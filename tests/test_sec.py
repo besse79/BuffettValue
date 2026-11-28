@@ -61,3 +61,17 @@ class SecTests(unittest.TestCase):
         d = document()
         d["facts"]["us-gaap"]["PaymentsToAcquirePropertyPlantAndEquipment"]["units"]["USD"] = [fact(-20, "2026-02-15")]
         self.assertEqual(summarize(d, "2026-03-01")["annual_fcf"], [])
+
+    def test_conflicting_same_day_facts_fail_closed(self):
+        d = document()
+        rows = d["facts"]["us-gaap"]["NetCashProvidedByUsedInOperatingActivities"]["units"]["USD"]
+        rows.append(fact(150, "2026-02-15"))
+        for order in (rows[:], list(reversed(rows))):
+            rows[:] = order
+            self.assertEqual(summarize(d, "2026-03-01")["annual_fcf"], [])
+            self.assertEqual(summarize(d, "2026-09-01")["annual_fcf"][0]["free_cash_flow_usd"], 900)
+
+    def test_identical_same_day_facts_are_not_ambiguous(self):
+        d = document()
+        d["facts"]["us-gaap"]["NetCashProvidedByUsedInOperatingActivities"]["units"]["USD"].append(fact(100, "2026-02-15"))
+        self.assertEqual(summarize(d, "2026-03-01")["annual_fcf"][0]["free_cash_flow_usd"], 80)
