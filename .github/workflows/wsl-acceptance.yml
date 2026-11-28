@@ -41,3 +41,6 @@ jobs:
           assert doc['items'] and doc['paper_eligible'] is False
           print('MKD_CLIENT_PASS',symbol,day)
           PY
+          IFS='|' read -r iid symbol mic currency day <<< "$SAMPLE"
+          python3 -m buffettvalue --input examples/dcf-example.json --mkd-instrument "$iid" --currency "$currency" > /tmp/buffett-dcf-$GITHUB_RUN_ID.json
+          python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); assert d["price_source"]=="MKD_OBSERVED" and d["paper_eligible"] is False; print(d)' /tmp/buffett-dcf-$GITHUB_RUN_ID.json
