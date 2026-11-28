@@ -25,6 +25,7 @@ def _facts(document, taxonomy, tag, unit, as_of):
 
 def _annual(document, tag, as_of):
     result = {}
+    ambiguous = set()
     for row, filed, end in _facts(document, "us-gaap", tag, "USD", as_of):
         try:
             start = date.fromisoformat(row["start"])
@@ -41,7 +42,10 @@ def _annual(document, tag, as_of):
         previous = result.get(year)
         if previous is None or (filed, end) > (previous["filed"], previous["end"]):
             result[year] = {"value": float(row["val"]), "filed": filed, "end": end}
-    return result
+            ambiguous.discard(year)
+        elif filed == previous["filed"] and float(row["val"]) != previous["value"]:
+            ambiguous.add(year)
+    return {period: value for period, value in result.items() if period not in ambiguous}
 
 def _shares(document, as_of):
     rows = _facts(document, "dei", "EntityCommonStockSharesOutstanding", "shares", as_of)
